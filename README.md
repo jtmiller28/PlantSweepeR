@@ -1,4 +1,4 @@
 # PlantSweepeR
-A r package under development for databasing flagged tracheophyte occurrence data.
+An r package under development for accessing archived datasets of flagged vascular plant occurrence data.
 <img src="/figures/plantSweepeR.png" height="300" align="middle" />
 
