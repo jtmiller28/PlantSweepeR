@@ -243,4 +243,7 @@ final_table <- final_table %>%
   mutate(alignedParentName = ifelse(grepl("^×", alignedParentName), "", alignedParentName)) 
 #filter(!grepl("^×", alignedParentName)) # remove things that begin with '×'
 
+final_table <- final_table %>% 
+  filter(str_count(name, "\\S+") != 1)
+
 fwrite(final_table, "/blue/guralnick/millerjared/PlantSweepeR/data/processed/wcvp-ncbi-alignment-2025.csv")
