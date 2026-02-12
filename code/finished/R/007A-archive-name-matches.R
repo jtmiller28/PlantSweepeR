@@ -22,7 +22,8 @@ con <- dbConnect(duckdb::duckdb(),
                  read_only = TRUE) # make sure this is TRUE, write causes errors
 
 ## For each accepted_name, match all patterns that are built by the name variants
-name_list <- readRDS("/blue/guralnick/millerjared/PlantSweepeR/data/processed/name_list_reordered.rds")
+#name_list <- readRDS("/blue/guralnick/millerjared/PlantSweepeR/data/processed/name_list_reordered.rds")
+name_list <- readRDS("/blue/guralnick/millerjared/PlantSweepeR/data/processed/unfinished_names_chkpt.rds")
 accepted_target <- name_list[[task_id]][1]
 accepted_name_filestyle <- gsub(" ", "_", accepted_target)
 

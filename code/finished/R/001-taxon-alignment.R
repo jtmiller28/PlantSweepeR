@@ -9,6 +9,8 @@ library(data.table)
 library(rgnparser)
 library(tidyverse)
 library(taxadb)
+library(duckdbfs)
+library(dplyr)
 
 #### Set up pathing to use gnparser
 my_path <- Sys.getenv("PATH") # grab our path
@@ -16,9 +18,12 @@ Sys.setenv(PATH = paste0(my_path, "/home/millerjared/gnparser"))
 
 #### Load Taxonomic Backbones
 wcvp_backbone <- fread("/blue/guralnick/millerjared/PlantSweepeR/data/raw/wcvp_names_2025_update.csv")
-td_create("ncbi")
-ncbi_names <- taxa_tbl("ncbi") # load in ncbi's names according to taxadb's last pull
-ncbi_names <- ncbi_names %>%  collect() # collects into a df 
+#td_create("ncbi") # currently waiting on these changes to be fully pushed into taxadb. We'll use the direct path
+#ncbi_names <- taxa_tbl("ncbi") # load in ncbi's names according to taxadb's last pull
+#ncbi_names <- ncbi_names %>%  collect() # collects into a df 
+# direct pathing
+df <- open_dataset("https://data.source.coop/cboettig/taxadb/2026/dwc_ncbi_part_0.parquet")
+ncbi_names <- df %>% collect()
 
 #### Clean database to relevant taxonomic scope
 ncbi_names <- as.data.table(ncbi_names) 
@@ -121,8 +126,33 @@ ncbi_relations <- ncbi_relations[, .(
   ncbiAuthor
 )]
 
+# some post-processing and removal of nonesense 'sp.'
+ncbi_relations <- ncbi_relations %>% 
+  filter(!grepl("^\\w+ sp\\.", ncbiAlignedName)) %>% 
+  filter(!grepl("^\\w+ sp\\.", ncbiName)) %>% 
+  filter(!grepl("^(\\w+ sp\\.|\\w+ \\w+ sp\\.)", ncbiAlignedName)) %>% 
+  filter(!grepl("^(\\w+ sp\\.|\\w+ \\w+ sp\\.)", ncbiName)) %>% 
+  filter(!grepl("photobiont", ncbiName)) %>% 
+  filter(!grepl("photobiont", ncbiAlignedName)) %>% 
+  filter(!grepl("^\\w+ \\w+ .* type\\b", ncbiName)) %>% 
+  filter(!grepl("^\\w+ \\w+ .* type\\b", ncbiAlignedName)) %>% 
+  filter(str_count(ncbiName, "\\S+") > 1)
+
+# check for multiple mappings in synonyms of ncbi
+ncbi_relations <- ncbi_relations %>% 
+  group_by(ncbiName) %>% 
+  mutate(n_aligned_names = n_distinct(ncbiAlignedName, na.rm = TRUE), 
+         multiple_alignment_paths = n_aligned_names > 1) %>% 
+  ungroup()
+
+# keep ONLY if its the accepted name itself 
+ncbi_relations <- ncbi_relations %>% 
+  filter(!(multiple_alignment_paths == TRUE & ncbiNameTaxonomicStatus != "accepted with authorship" & ncbiNameTaxonomicStatus != "accepted"))
+
 # wcvp standardize
 wcvp_names <- wcvp_backbone[, .(genus, order, family, plant_name_id, taxon_status, taxon_name, taxon_authors, accepted_plant_name_id)]
+
+saveRDS(wcvp_names, "/blue/guralnick/millerjared/PlantSweepeR/data/processed/wcvp-names-formatted.rds")
 
 # create aligned name field (wcvp only) note we use backbone due to Viburnum filtering leaving out HETEROTYPIC synonyms. 
 wcvp_accepted_mapping <- wcvp_backbone[taxon_status == "Accepted"]

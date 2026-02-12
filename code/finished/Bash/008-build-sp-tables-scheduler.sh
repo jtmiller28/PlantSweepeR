@@ -1,21 +1,21 @@
 #!/bin/bash
 
-#SBATCH --job-name=Archive-Name-Matches-Scheduler             # Job name
+#SBATCH --job-name=building-sp-tables              # Job name
 #SBATCH --mail-type=FAIL,ARRAY_TASKS     # Mail events (NONE, BEGIN, END, FAIL, ALL)
 #SBATCH --mail-user=jtmiller@ucsb.edu    # Where to send mail
-#SBATCH --output=/blue/guralnick/millerjared/PlantSweepeR/logs/007-archive-name-matches/task%A-%a.out                 # Standard output and error log
+#SBATCH --output=/blue/guralnick/millerjared/PlantSweepeR/logs/008-build-sp-tables/sp-table-build%A-%a.out                 # Standard output and error log
 #SBATCH --nodes=1                        # Run all processes on a single node
 #SBATCH --ntasks=1                       # Run a single task
 #SBATCH --cpus-per-task=1               # Number of CPU cores per task
-#SBATCH --mem-per-cpu=30gb                   # Job memory request
+#SBATCH --mem-per-cpu=64gb                   # Job memory request
 #SBATCH --time=00-96:00:00               # Time limit days-hrs:min:sec
-#SBATCH --array=1-60                  # Array Range
+#SBATCH --array=1-14                  # Array Range
 #SBATCH --account=guralnick             # We're using Guralnick
 #SBATCH --qos=guralnick-b                # We're using Guralnick resources
 pwd; hostname; date
 
 # Set the number of runs that each SLURM task should do
-PER_TASK=639
+PER_TASK=14
 
 # Calc the starting and ending values for this task based on the SLURM task and the num of runs per task
 START_NUM=$(( ($SLURM_ARRAY_TASK_ID - 1) * $PER_TASK + 1 ))
@@ -36,7 +36,7 @@ export START_NUM=$run
 module load R/4.5
 
 #do some (or alot) of coding
-Rscript --vanilla /blue/guralnick/millerjared/PlantSweepeR/code/finished/R/007-archive-name-matches.R
+Rscript --vanilla /blue/guralnick/millerjared/PlantSweepeR/code/finished/R/008-build-sp-tables.R
 
 done
 
